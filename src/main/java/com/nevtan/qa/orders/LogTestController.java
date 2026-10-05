@@ -51,6 +51,7 @@ public class LogTestController {
         routes.put("GET /qa/slow?ms=30000", "QA-15 silence, then one line (idle tail test)");
         routes.put("GET /qa/oom", "QA-16 allocate until the container is OOM killed");
         routes.put("GET /qa/crash", "QA-17 exit(1) immediately, restart loop");
+        routes.put("GET /qa/cpu?threads=4&seconds=120", "QA-18 burn CPU on n threads (100% per thread)");
         routes.put("GET /qa/all", "fire QA-01 to QA-13 in order");
         return routes;
     }
@@ -174,6 +175,28 @@ public class LogTestController {
             System.exit(1);
         }).start();
         return "QA-17 fired, exiting in 200ms";
+    }
+
+    /** QA-18 - pin n cores for a while, to push the container past 100% CPU of its plan. */
+    @GetMapping("/cpu")
+    public String cpu(@RequestParam(defaultValue = "4") int threads,
+                      @RequestParam(defaultValue = "120") long seconds) {
+        int n = Math.max(1, Math.min(threads, 16));
+        long secs = Math.max(1, Math.min(seconds, 600));
+        long deadline = System.currentTimeMillis() + secs * 1000;
+        log.warn("[QA-18 CPU] burning {} threads for {}s, expect ~{}% CPU", n, secs, n * 100);
+        for (int i = 0; i < n; i++) {
+            Thread t = new Thread(() -> {
+                double x = 0;
+                while (System.currentTimeMillis() < deadline) {
+                    x += Math.sqrt(x + 1);
+                }
+                log.info("[QA-18 CPU] thread {} done ({})", Thread.currentThread().getName(), x > 0);
+            }, "qa18-cpu-" + i);
+            t.setDaemon(true);
+            t.start();
+        }
+        return "QA-18 fired, " + n + " threads for " + secs + "s";
     }
 
     @GetMapping("/all")

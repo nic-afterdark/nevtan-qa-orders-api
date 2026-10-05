@@ -44,6 +44,7 @@ the code that wrote it. Fire a case with its route, then look at the Logs page.
 | QA-15 | `/qa/slow?ms=30000` | silence for 30s, then one line | live tail survives the gap and shows the line without a refresh |
 | QA-16 | `/qa/oom` | allocates 8 MB at a time until the JVM or the container dies | the OutOfMemoryError or the kill is visible in the logs, not just a dead container |
 | QA-17 | `/qa/crash` | `System.exit(1)` | logs from before the crash survive the restart |
+| QA-18 | `/qa/cpu?threads=4&seconds=120` | n busy threads for the given time, ~100% CPU each | CPU on the monitoring page climbs past 100% of the plan; the domain keeps answering (or gives a clean 502) instead of disappearing |
 | all | `/qa/all` | QA-01 to QA-13 in order | a single pass over most of the table |
 
 `/qa/burst?n=20000` and `/qa/slow?ms=120000` are the upper limits; larger values
